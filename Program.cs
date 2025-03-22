@@ -128,10 +128,9 @@
         // 뱀의 무빙 로직 구현
         static void Move(ConsoleKey key, ref Position snakePos, char[,] map, ref List<Position> snakeList, ref bool gameOver)
         {
+            int timer = Environment.TickCount;
             // 음식을 먹으면 뱀의 끝부분에 몸이 생성되어 길어지도록 구현
             // 뱀은 머리가 가는 경로를 따라감 -> 이걸 어떻게 구현하지? -> List<Position>에 넣고 요소를 출력하는 것으로 해결
-            if(Console.KeyAvailable)
-            { 
             switch (key)
             {
                 case ConsoleKey.W:
