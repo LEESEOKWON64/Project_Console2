@@ -8,20 +8,28 @@
             public int x;
             public int y;
         }
-        // 초기 조건 시작, 먹이 위치, 맵 배치
-        static void Start(out Position snakePos, out Position foodPos, out char[,] map, ref List<Position> snakeList, int snakeLength)
+
+        enum Direct
+        { UP, LEFT, DOWN, RIGHT }
+
+        struct Direction
         {
-            snakePos.x = 5;
+            public Direct direct;
+        }
+        // 초기 조건 시작, 먹이 위치, 맵 배치
+        static void Start(out Position snakePos, out Position foodPos, out char[,] map, ref List<Position> snakeList, int snakeLength, out Direction snakeDir)
+        {
+            snakePos.x = 5;  // 뱀 초기 위치
             snakePos.y = 5;
 
-            foodPos.x = 5;
+            foodPos.x = 5;   // 먹이 초기 위치
             foodPos.y = 6;
+
+            snakeDir.direct = Direct.RIGHT;   // 뱀 초기 방향
 
             snakeList.Add(snakePos);
 
-
-
-            map = new char[20, 20];
+            map = new char[20, 20];   // 맵 설정
             for (int i = 0; i < 20; i++)
             {
                 for (int j = 0; j < 20; j++)
@@ -40,35 +48,37 @@
         // 메인 메서드
         static void Main(string[] args)
         {
-            Console.CursorVisible = false;
+            Console.CursorVisible = false;   // 커서 안보이도록 설정
 
             bool gameOver = false;
             Position snakePos;
             Position foodPos;
+            Direction snakeDir;
+
             int snakeLength = 1;
             List<Position> snakeList = new List<Position>();
             char[,] map;
 
-            Start(out snakePos, out foodPos, out map, ref snakeList, snakeLength);
+            Start(out snakePos, out foodPos, out map, ref snakeList, snakeLength, out snakeDir);
 
             while (gameOver == false)
             {
+                Render(snakeList, foodPos, map, snakeLength, snakeDir, ref snakePos);
 
-                Render(snakeList, foodPos, map, snakeLength);
-                ConsoleKey key = Input();
-                Update(key, ref snakePos, ref gameOver, ref foodPos, map, ref snakeLength, ref snakeList);
+                Update(ref snakePos, ref gameOver, ref foodPos, map, ref snakeLength, ref snakeList, ref snakeDir);
 
+                Thread.Sleep(200);
             }
 
             End(snakeLength);
         }
         // 맵, 오브젝트 구현 함수
-        static void Render(List<Position> snakeList, Position foodPos, char[,] map, int snakeLength)
+        static void Render(List<Position> snakeList, Position foodPos, char[,] map, int snakeLength, Direction snakeDir, ref Position snakePos)
         {
             Console.SetCursorPosition(0, 0);
 
             PrintMap(map);
-            PrintSnake(snakeList, snakeLength);
+            PrintSnake(snakeList, snakeLength, snakeDir, ref snakePos);
             PrintFood(foodPos);
         }
         // 맵 표시
@@ -93,8 +103,29 @@
             }
         }
         // 뱀의 위치 표시 -> List<Position>의 모든 요소 출력 -> 초록색 네모
-        static void PrintSnake(List<Position> snakeList, int snakeLength)
+        static void PrintSnake(List<Position> snakeList, int snakeLength, Direction snakeDir, ref Position snakePos)
         {
+            if (snakeDir.direct == Direct.UP)
+            {
+                snakePos.y--;
+            }
+
+            else if (snakeDir.direct == Direct.LEFT)
+            {
+                snakePos.x--;
+            }
+
+            else if (snakeDir.direct == Direct.DOWN)
+            {
+                snakePos.y++;
+            }
+            else if (snakeDir.direct == Direct.RIGHT)
+            {
+                snakePos.x++;
+            }
+            snakeList.RemoveAt(0);
+            snakeList.Add(snakePos);
+
             for (int i = 0; i < snakeLength; i++)
             {
                 Console.SetCursorPosition(snakeList[i].x, snakeList[i].y);
@@ -112,76 +143,47 @@
             Console.ResetColor();
         }
         // 콘솔키를 활용하여 사용자 입력 값 받도록
-        static ConsoleKey Input()
+        static ConsoleKeyInfo Input()
         {
-            return Console.ReadKey(true).Key;
+            return Console.ReadKey();
         }
         // 게임 구현 기본 로직 함수
-        static void Update(ConsoleKey key, ref Position snakePos, ref bool gameOver, ref Position foodPos, char[,] map, ref int snakeLength, ref List<Position> snakeList)
+        static void Update(ref Position snakePos, ref bool gameOver, ref Position foodPos, char[,] map, ref int snakeLength, ref List<Position> snakeList, ref Direction snakeDir)
         {
-            Move(key, ref snakePos, map, ref snakeList, ref gameOver);
+            Move(ref snakeDir);
             SnakeAdd(map, snakePos, foodPos, snakeLength, ref snakeList);
             Food(snakePos, ref foodPos, map, ref snakeLength);
 
-            gameOver = IsDead(gameOver, snakeList, snakeLength);
+            gameOver = IsDead(gameOver, snakeList, snakeLength, map);
         }
         // 뱀의 무빙 로직 구현
-        static void Move(ConsoleKey key, ref Position snakePos, char[,] map, ref List<Position> snakeList, ref bool gameOver)
+        static void Move(ref Direction snakeDir)
         {
-            int timer = Environment.TickCount;
-            // 음식을 먹으면 뱀의 끝부분에 몸이 생성되어 길어지도록 구현
-            // 뱀은 머리가 가는 경로를 따라감 -> 이걸 어떻게 구현하지? -> List<Position>에 넣고 요소를 출력하는 것으로 해결
-            switch (key)
-            {
-                case ConsoleKey.W:
-                case ConsoleKey.UpArrow:
-                    if (map[snakePos.y - 1, snakePos.x] == '□')
+            
+                if (Console.KeyAvailable)
+                {
+                    ConsoleKeyInfo key = Console.ReadKey();
+                    switch (key.Key)
                     {
-                            snakePos.y--;
+                        case ConsoleKey.W:
+                        case ConsoleKey.UpArrow:
+                            snakeDir.direct = Direct.UP;
+                            break;
+                        case ConsoleKey.A:
+                        case ConsoleKey.LeftArrow:
+                            snakeDir.direct = Direct.LEFT;
+                            break;
+                        case ConsoleKey.S:
+                        case ConsoleKey.DownArrow:
+                            snakeDir.direct = Direct.DOWN;
+                            break;
+                        case ConsoleKey.D:
+                        case ConsoleKey.RightArrow:
+                            snakeDir.direct = Direct.RIGHT;
+                            break;
                     }
-                    // 뱀의 머리가 벽에 닿을 경우 게임 종료되도록 설계
-                    else if (map[snakePos.y - 1, snakePos.x] == ' ')
-                    {
-                        gameOver = true;
-                    }
-                    break;
-                case ConsoleKey.A:
-                case ConsoleKey.LeftArrow:
-                    if (map[snakePos.y, snakePos.x - 1] == '□')
-                    {
-                            snakePos.x--;                       
-                    }
-                    else if (map[snakePos.y, snakePos.x - 1] == ' ')
-                    {
-                        gameOver = true;
-                    }
-                    break;
-                case ConsoleKey.S:
-                case ConsoleKey.DownArrow:
-                    if (map[snakePos.y + 1, snakePos.x] == '□')
-                    {
-                            snakePos.y++;
-                    }                
-                    else if (map[snakePos.y + 1, snakePos.x] == ' ')
-                    {
-                        gameOver = true;
-                    }
-                    break;
-                case ConsoleKey.D:
-                case ConsoleKey.RightArrow:
-                    if (map[snakePos.y, snakePos.x + 1] == '□')
-                    {
-                            snakePos.x++;                       
-                    }
-                    else if (map[snakePos.y, snakePos.x + 1] == ' ')
-                    {
-                        gameOver = true;
-                    }
-                    break;
+                
             }
-            // 앞으로 이동한 자리가 새로운 뱀의 머리가 되고, 뱀의 꼬리는 버리는 형태로 움직임 구현
-            snakeList.RemoveAt(0);
-            snakeList.Add(snakePos);
         }
         // 몸통 생성 로직 구현
         static void SnakeAdd(char[,] map, Position snakePos, Position foodPos, int snakeLength, ref List<Position> snakeList)
@@ -203,7 +205,7 @@
             //맵에 랜덤으로 생성되도록 맵 크기 한정한 난수 생성
         }
         // 종료 조건 설정
-        static bool IsDead(bool gameOver, List<Position> snakeList, int snakeLength)
+        static bool IsDead(bool gameOver, List<Position> snakeList, int snakeLength, char[,] map)
         {
             {   // 뱀의 머리(맨 앞)이 뱀의 몸통과 닿을 경우 게임 종료 
                 for (int i = 0; i < snakeLength - 2; i++)
@@ -212,6 +214,10 @@
                     {
                         gameOver = true;
                     }
+                }
+                if (map[snakeList[snakeLength - 1].y, snakeList[snakeLength - 1].x] == ' ')
+                {
+                    gameOver = true;
                 }
             }
             return gameOver;
