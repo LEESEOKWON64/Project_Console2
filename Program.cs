@@ -67,7 +67,7 @@
 
                 Update(ref snakePos, ref gameOver, ref foodPos, map, ref snakeLength, ref snakeList, ref snakeDir);
 
-                Thread.Sleep(200);
+                Thread.Sleep(133);
             }
 
             End(snakeLength);
@@ -78,8 +78,8 @@
             Console.SetCursorPosition(0, 0);
 
             PrintMap(map);
-            PrintSnake(snakeList, snakeLength, snakeDir, ref snakePos);
             PrintFood(foodPos);
+            PrintSnake(snakeList, snakeLength, snakeDir, ref snakePos);            
         }
         // 맵 표시
         static void PrintMap(char[,] map)
@@ -109,12 +109,10 @@
             {
                 snakePos.y--;
             }
-
             else if (snakeDir.direct == Direct.LEFT)
             {
                 snakePos.x--;
             }
-
             else if (snakeDir.direct == Direct.DOWN)
             {
                 snakePos.y++;
@@ -142,11 +140,7 @@
             Console.WriteLine('●');
             Console.ResetColor();
         }
-        // 콘솔키를 활용하여 사용자 입력 값 받도록
-        static ConsoleKeyInfo Input()
-        {
-            return Console.ReadKey();
-        }
+
         // 게임 구현 기본 로직 함수
         static void Update(ref Position snakePos, ref bool gameOver, ref Position foodPos, char[,] map, ref int snakeLength, ref List<Position> snakeList, ref Direction snakeDir)
         {
@@ -158,8 +152,7 @@
         }
         // 뱀의 무빙 로직 구현
         static void Move(ref Direction snakeDir)
-        {
-            
+        {           
                 if (Console.KeyAvailable)
                 {
                     ConsoleKeyInfo key = Console.ReadKey();
@@ -181,8 +174,7 @@
                         case ConsoleKey.RightArrow:
                             snakeDir.direct = Direct.RIGHT;
                             break;
-                    }
-                
+                    }                
             }
         }
         // 몸통 생성 로직 구현
